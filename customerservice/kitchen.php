@@ -39,17 +39,6 @@
                     <textarea class="form-control" name="additional_request" id="additional_request" placeholder="Add any special request"></textarea>
                 </div>
 
-                <!-- Username and Password Fields -->
-                <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" class="form-control" name="username" id="username" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" class="form-control" name="password" id="password" required />
-                </div>
-
                 <button type="submit" class="btn btn-primary btn-block">Submit Kitchen Request</button>
             </div>
         </form>
