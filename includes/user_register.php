@@ -1,5 +1,20 @@
 <?php
-include 'dbconnect.php'; // Include the file that defines the `connectDatabase()` function
+
+$host = "localhost";
+$username = "root";
+$password = "";
+$db = "finalproj";
+
+function connectDatabase()
+{
+    global $host, $username, $password, $db;
+    $connection = new \mysqli($host, $username, $password, $db);
+    if ($connection->connect_error) {
+        die("Connection failed: " . $connection->connect_error);
+    }
+    return $connection;
+}
+
 
 // Create the database connection
 $connection = connectDatabase();
@@ -93,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
         <input type="Submit" name="submit" value="register" class="btn btn-primary">Submit</button>
         <p>Or</p>
-        <p><a class="link-opacity-100" href="ogin.php">Login</a></p>
+        <p><a class="link-opacity-100" href="login.php">Login</a></p>
         <p><a class="link-opacity-100" href="">Admin</a></p>
     </form>
 
