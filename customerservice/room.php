@@ -1,120 +1,296 @@
-<center>
-    <div id="kitchenformsection">
-        <form action="">
-            <label for="">Enjoy our kitchen service with a variety of delicious options:</label>
-            <ul class="list-group">
-                <li class="list-group-item" data-meal="breakfast">Breakfast</li>
-                <li class="list-group-item" data-meal="lunch">Lunch</li>
-                <li class="list-group-item" data-meal="dinner">Dinner</li>
-                <li class="list-group-item" data-meal="snacks">Snacks and Beverages</li>
-                <li class="list-group-item" data-meal="special">Special Dietary Meals</li>
-            </ul>
+<?php
+// Include database connection
+include "../includes/dbconnect.php";
+$connection = connectDatabase();
 
-            <!-- Select Meal Type Dropdown -->
-            <div id="hide" class="mt-3" style="display: none;">
-                <div class="form-group">
-                    <label for="meal_type">Select Meal Type:</label>
-                    <select class="form-control" name="meal_type" id="meal_type" required>
-                        <option value="breakfast">Breakfast</option>
-                        <option value="lunch">Lunch</option>
-                        <option value="dinner">Dinner</option>
-                        <option value="snacks">Snacks and Beverages</option>
-                        <option value="special">Special Dietary Meals</option>
-                    </select>
-                </div>
+if (!$connection) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
 
-                <!-- Additional Fields -->
-                <div class="form-group">
-                    <label for="num_guests">Number of Guests:</label>
-                    <input type="number" class="form-control" name="num_guests" id="num_guests" required />
-                </div>
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Retrieve and sanitize form data
+    $roomType = isset($_POST['roomType']) ? htmlspecialchars(trim($_POST['roomType'])) : '';
+    $guests = isset($_POST['guests']) ? htmlspecialchars(trim($_POST['guests'])) : '';
+    $eventDate = isset($_POST['eventDate']) ? htmlspecialchars(trim($_POST['eventDate'])) : '';
+    $request = isset($_POST['request']) ? htmlspecialchars(trim($_POST['request'])) : '';
+    $username = isset($_POST['username']) ? htmlspecialchars(trim($_POST['username'])) : '';
+    $password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
 
-                <div class="form-group">
-                    <label for="event_date">Event Date:</label>
-                    <input type="date" class="form-control" name="event_date" id="event_date" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="additional_request">Additional Request:</label>
-                    <textarea class="form-control" name="additional_request" id="additional_request" placeholder="Add any special request"></textarea>
-                </div>
-
-                <!-- Username and Password Fields -->
-                <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" class="form-control" name="username" id="username" required />
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" class="form-control" name="password" id="password" required />
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block">Submit Kitchen Request</button>
-            </div>
-        </form>
-    </div>
-</center>
-
-<!-- External Bootstrap CSS link (for full functionality) -->
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-    /* Kitchen Form Section Styling */
-    #kitchenformsection {
-        background-color: #ecf0f1;
-        border-radius: 10px;
-        padding: 30px;
-        width: 80%;
-        max-width: 500px;
-        margin: 40px auto;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        text-align: left;
+    // Validate required fields
+    if (empty($roomType) || empty($guests) || empty($eventDate) || empty($username) || empty($password)) {
+        die("All fields are required.");
     }
 
-    #kitchenformsection label {
-        font-size: 16px;
-        color: #2c3e50;
-        display: block;
-        margin-bottom: 15px;
+    // Validate user login credentials
+    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
+    if (!$stmt = $connection->prepare($sql)) {
+        die("Query preparation failed: " . $connection->error);
     }
 
-    #kitchenformsection .list-group-item {
-        cursor: pointer;
-    }
+    $stmt->bind_param("is", $username, $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    #kitchenformsection .list-group-item:hover {
-        background-color: #3498db;
-        color: white;
-    }
+    if ($result->num_rows > 0) {
+        // Fetch user_id from the result
+        $row = $result->fetch_assoc();
+        $user_id = $row['customerId'];  // Storing the user_id
 
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-        #kitchenformsection {
-            width: 90%;
+        // Insert room booking data
+        $sql_insert = "INSERT INTO room (user_id, room_type, num_guest, event_date, additional_request)
+                       VALUES (?, ?, ?, ?, ?)";
+        if (!$stmt_insert = $connection->prepare($sql_insert)) {
+            die("Insert query preparation failed: " . $connection->error);
         }
+
+        $stmt_insert->bind_param("isiss", $user_id, $roomType, $guests, $eventDate, $request);
+
+        if ($stmt_insert->execute()) {
+            // Redirect to main page on success
+            header("Location: ../reception/mainpage.php");
+            exit();
+        } else {
+            echo "Error submitting room booking request: " . $stmt_insert->error;
+        }
+
+        $stmt_insert->close();
+    } else {
+        echo "Invalid credentials, please try again.";
     }
 
-    #hide {
-        display: none;
-    }
-</style>
+    $stmt->close();
+}
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+$connection->close();
+?>
 
-<script>
-    // Kitchen Form Logic for toggling
-    let kitchenli = document.querySelectorAll('#kitchenformsection .list-group-item');
-    const hide = document.getElementById('hide');
-    for (let k = 0; k < kitchenli.length; k++) {
-        kitchenli[k].addEventListener('click', () => {
-            if (hide.style.display === 'none' || hide.style.display === '') {
-                hide.style.display = 'block';
-            } else {
-                hide.style.display = 'none';
-            }
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Booking</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Card image styling to maintain same size and aspect ratio */
+        .room-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            /* Ensures the images fill the space without stretching */
+        }
+
+        .room-card .btn {
+            background-color: #2c3e50;
+            color: white;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .room-card .btn:hover {
+            background-color: #34495e;
+        }
+
+        .room-card .card-body {
+            text-align: center;
+        }
+
+        .room-card .card-body h5 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .room-card .card-body p {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .room-card {
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+
+        /* Custom styling for the form */
+        .room-form {
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .room-form input,
+        .room-form select,
+        .room-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .room-form textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        .room-form button {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 12px;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .room-form button:hover {
+            background-color: #34495e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Room Images Section -->
+    <div class="container mt-5">
+        <div class="row">
+            <!-- Master Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/deluxebed.jpg" class="card-img-top" alt="Master Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">Master Bedroom</h5>
+                        <p class="card-text">A luxurious experience</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="master">Book Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Double Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/doublebed.jpg" class="card-img-top" alt="Double Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">Double Bedroom</h5>
+                        <p class="card-text">A comfortable stay</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="double">Book Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- King Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/kingbed.jpg" class="card-img-top" alt="King Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">King Bedroom</h5>
+                        <p class="card-text">A royal stay awaits</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="king">Book Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2nd Row with remaining rooms -->
+        <div class="row">
+            <!-- Single Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/masterbed.jpg" class="card-img-top" alt="Single Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">Single Bedroom</h5>
+                        <p class="card-text">Simple & cozy</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="single">Book Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queen Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/queenbed.jpg" class="card-img-top" alt="Queen Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">Queen Bedroom</h5>
+                        <p class="card-text">Fit for a queen</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="queen">Book Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Double Bedroom Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card room-card">
+                    <img src="../images/singlebed.jpg" class="card-img-top" alt="Double Bedroom">
+                    <div class="card-body">
+                        <h5 class="card-title">Double Bedroom</h5>
+                        <p class="card-text">Double the comfort</p>
+                        <button class="btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-roomtype="double">Book Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Form Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingModalLabel">Book Your Room</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="room.php" method="post" enctype="multipart/form-data">
+                        <!-- Username -->
+                        <input type="text" name="username" class="form-control" placeholder="Username" required><br>
+
+                        <!-- Password -->
+                        <input type="password" name="password" class="form-control" placeholder="Password" required><br>
+
+                        <!-- Room Type (Hidden initially) -->
+                        <input type="text" name="roomType" id="roomType" class="form-control" placeholder="Room Type" readonly><br>
+
+                        <!-- Number of Guests -->
+                        <input type="number" name="guests" class="form-control" placeholder="Number of Guests" required><br>
+
+                        <!-- Event Date -->
+                        <input type="date" name="eventDate" class="form-control" required><br>
+
+                        <!-- Additional Request -->
+                        <textarea name="request" class="form-control" placeholder="Add any special request"></textarea><br>
+
+                        <!-- Submit Button -->
+                        <button class="btn btn-primary" type="submit">Submit Room Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Handle setting the room type based on the clicked room
+        var modal = document.getElementById('bookingModal');
+        modal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget; // Button that triggered the modal
+            var roomType = button.getAttribute('data-roomtype'); // Extract info from data-* attributes
+            var roomTypeInput = modal.querySelector('#roomType');
+            roomTypeInput.value = roomType;
         });
-    }
-</script>
+    </script>
+</body>
+
+</html>

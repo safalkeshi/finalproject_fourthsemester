@@ -1,19 +1,129 @@
-<center>
-    <div id="laundrysection" class="container mt-5">
-        <form action="">
-            <label for="">We offer a variety of laundry services to meet your needs:</label>
-            <ul class="list-group">
-                <li class="list-group-item" data-service="dry_cleaning">Dry Cleaning</li>
-                <li class="list-group-item" data-service="regular_laundry">Regular Laundry</li>
-                <li class="list-group-item" data-service="ironing">Ironing Services</li>
-                <li class="list-group-item" data-service="special_fabric">Special Fabric Care</li>
-            </ul>
+<?php
+// Include database connection
+include "../includes/dbconnect.php";
+$connection = connectDatabase();
 
-            <!-- Select Laundry Service Type Dropdown -->
-            <div id="hide2" class="mt-3" style="display: none;">
+if (!$connection) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Retrieve and sanitize form data
+    $laundry_type = isset($_POST['laundry_type']) ? htmlspecialchars(trim($_POST['laundry_type'])) : '';
+    $num_cloth = isset($_POST['num_cloth']) ? htmlspecialchars(trim($_POST['num_cloth'])) : '';
+    $event_date = isset($_POST['event_date']) ? htmlspecialchars(trim($_POST['event_date'])) : '';
+    $additional_request = isset($_POST['additional_request']) ? htmlspecialchars(trim($_POST['additional_request'])) : '';
+    $user_id = isset($_POST['user_id']) ? htmlspecialchars(trim($_POST['user_id'])) : '';
+    $user_password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
+
+    // Validate required fields
+    if (empty($laundry_type) || empty($num_cloth) || empty($event_date) || empty($user_id) || empty($user_password)) {
+        die("All fields are required.");
+    }
+
+    // Validate user login credentials
+    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
+    if (!$stmt = $connection->prepare($sql)) {
+        die("Query preparation failed: " . $connection->error);
+    }
+
+    $stmt->bind_param("is", $user_id, $user_password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Insert laundry request data
+        $sql_insert = "INSERT INTO laundry (user_id, laundry_type, num_cloth, event_date, additional_request)
+                       VALUES (?, ?, ?, ?, ?)";
+        if (!$stmt_insert = $connection->prepare($sql_insert)) {
+            die("Insert query preparation failed: " . $connection->error);
+        }
+
+        $stmt_insert->bind_param("isiss", $user_id, $laundry_type, $num_cloth, $event_date, $additional_request);
+
+        if ($stmt_insert->execute()) {
+            // Redirect to main page on success
+            header("Location: ../reception/mainpage.php");
+            exit();
+        } else {
+            echo "Error submitting laundry request: " . $stmt_insert->error;
+        }
+
+        $stmt_insert->close();
+    } else {
+        echo "Invalid credentials, please try again.";
+    }
+
+    $stmt->close();
+}
+
+$connection->close();
+?>
+
+<!-- HTML Form -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Service Request</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #laundrysection {
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            padding: 30px;
+            width: 80%;
+            max-width: 500px;
+            margin: 40px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #laundrysection h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #laundrysection label {
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        #laundrysection button {
+            background-color: #2c3e50;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        #laundrysection button:hover {
+            background-color: #34495e;
+        }
+
+        @media (max-width: 768px) {
+            #laundrysection {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <center>
+        <div id="laundrysection" class="container mt-5">
+            <form action="laundry.php" method="POST" enctype="multipart/form-data">
+                <h3>Laundry Service Request</h3>
+                <p>We offer a variety of laundry services to meet your needs.</p>
+
                 <div class="form-group">
                     <label for="laundry_service">Select Laundry Service:</label>
-                    <select class="form-control" name="laundry_service" id="laundry_service" required>
+                    <select class="form-control" name="laundry_type" id="laundry_service" required>
                         <option value="dry_cleaning">Dry Cleaning</option>
                         <option value="regular_laundry">Regular Laundry</option>
                         <option value="ironing">Ironing Services</option>
@@ -21,7 +131,6 @@
                     </select>
                 </div>
 
-                <!-- Additional Fields for Laundry Request -->
                 <div class="form-group">
                     <label for="num_cloth">Number of Clothes:</label>
                     <input type="number" class="form-control" name="num_cloth" id="num_cloth" required />
@@ -37,7 +146,6 @@
                     <textarea class="form-control" name="additional_request" id="additional_request" placeholder="Add any special request"></textarea>
                 </div>
 
-                <!-- Username and Password Fields -->
                 <div class="form-group">
                     <label for="user_id">User ID:</label>
                     <input type="text" class="form-control" name="user_id" id="user_id" required />
@@ -48,92 +156,10 @@
                     <input type="password" class="form-control" name="password" id="password" required />
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block">Submit Laundry Request</button>
-            </div>
-        </form>
-    </div>
-</center>
+                <button type="submit" class="btn btn-primary">Submit Laundry Request</button>
+            </form>
+        </div>
+    </center>
+</body>
 
-<!-- Bootstrap CSS link for styling -->
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-    /* Laundry Section Styling */
-    #laundrysection {
-        background-color: #ecf0f1;
-        border-radius: 10px;
-        padding: 30px;
-        width: 80%;
-        max-width: 500px;
-        margin: 40px auto;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        text-align: left;
-    }
-
-    #laundrysection label {
-        font-size: 16px;
-        color: #2c3e50;
-        display: block;
-        margin-bottom: 15px;
-    }
-
-    #laundrysection .list-group-item {
-        cursor: pointer;
-    }
-
-    #laundrysection .list-group-item:hover {
-        background-color: #3498db;
-        color: white;
-    }
-
-    #laundrysection .form-group {
-        margin-bottom: 15px;
-    }
-
-    #laundrysection button {
-        width: 100%;
-        padding: 12px;
-        margin-top: 20px;
-        background-color: #2c3e50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    #laundrysection button:hover {
-        background-color: #34495e;
-    }
-
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-        #laundrysection {
-            width: 90%;
-        }
-    }
-
-    #hide2 {
-        display: none;
-    }
-</style>
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-<script>
-    // Laundry Section toggle logic
-    let laundryLi = document.querySelectorAll('#laundrysection .list-group-item');
-    const hide2 = document.getElementById('hide2');
-    for (let l = 0; l < laundryLi.length; l++) {
-        laundryLi[l].addEventListener('click', () => {
-            if (hide2.style.display === 'none' || hide2.style.display === '') {
-                hide2.style.display = 'block';
-            } else {
-                hide2.style.display = 'none';
-            }
-        });
-    }
-</script>
+</html>

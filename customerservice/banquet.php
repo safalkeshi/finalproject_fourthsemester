@@ -1,7 +1,61 @@
+<?php
+include "../includes/dbconnect.php";
+$connection = connectDatabase();
+
+if (!$connection) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $event_type = trim($_POST['event_type']);
+    $num_guests = trim($_POST['num_guests']);
+    $event_date = trim($_POST['event_date']);
+    $additional_request = trim($_POST['additional_request']);
+    $user_id = trim($_POST['user_id']);
+    $user_password = trim($_POST['password']);
+
+    $stmt_insert = null;
+
+    // Validate the user login credentials
+    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
+    if (!$stmt = $connection->prepare($sql)) {
+        die("Query preparation failed: " . $connection->error);
+    }
+
+    $stmt->bind_param("is", $user_id, $user_password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Insert banquet data
+        $sql_insert = "INSERT INTO banquet (user_id, event_type, num_guests, event_date, additional_request)
+                         VALUES (?, ?, ?, ?, ?)";
+        if (!$stmt_insert = $connection->prepare($sql_insert)) {
+            die("Insert query preparation failed: " . $connection->error);
+        }
+
+        $stmt_insert->bind_param("isiss", $user_id, $event_type, $num_guests, $event_date, $additional_request);
+        if ($stmt_insert->execute()) {
+            header("location:../reception/mainpage.php");
+        } else {
+            echo "Error submitting banquet request: " . $stmt_insert->error;
+        }
+    } else {
+        echo "Invalid credentials, please try again.";
+    }
+
+    $stmt->close();
+    if ($stmt_insert) {
+        $stmt_insert->close();
+    }
+}
+
+$connection->close();
+?>
 <center>
     <div id="banquetsection" class="container mt-5">
         <label for="">Our hotel offers a variety of banquet options for your events:</label>
-        <form action="mainpage.php" method="post">
+        <form action="" method="post" enctype="multipart/form-data">
             <!-- Select Banquet Event Type -->
             <div class="form-group">
                 <label for="event_type">Select Event Type:</label>
