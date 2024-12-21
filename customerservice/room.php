@@ -277,6 +277,9 @@ $connection->close();
             </div>
         </div>
     </div>
+    <!-- Availability Check Button -->
+    <button type="button" id="checkAvailabilityBtn" class="btn btn-info"><a href="checkavailability.php">Check Availability</a></button>
+    <p id="availabilityMessage" class="mt-2"></p>
 
     <!-- Add Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
