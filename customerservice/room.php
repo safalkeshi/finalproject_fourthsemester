@@ -3,6 +3,7 @@
 include "../includes/dbconnect.php";
 $connection = connectDatabase();
 
+
 if (!$connection) {
     die("Database connection failed: " . mysqli_connect_error());
 }
@@ -168,7 +169,7 @@ $connection->close();
             <!-- Master Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/deluxebed.jpg" class="card-img-top" alt="Master Bedroom">
+                    <img src="../customerservice/images/deluxebed.jpg" class="card-img-top" alt="Master Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">Master Bedroom</h5>
                         <p class="card-text">A luxurious experience</p>
@@ -180,7 +181,7 @@ $connection->close();
             <!-- Double Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/doublebed.jpg" class="card-img-top" alt="Double Bedroom">
+                    <img src="../customerservice/images/doublebed.jpg" class="card-img-top" alt="Double Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">Double Bedroom</h5>
                         <p class="card-text">A comfortable stay</p>
@@ -192,7 +193,7 @@ $connection->close();
             <!-- King Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/kingbed.jpg" class="card-img-top" alt="King Bedroom">
+                    <img src="../customerservice/images/kingbed.jpg" class="card-img-top" alt="King Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">King Bedroom</h5>
                         <p class="card-text">A royal stay awaits</p>
@@ -207,7 +208,7 @@ $connection->close();
             <!-- Single Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/masterbed.jpg" class="card-img-top" alt="Single Bedroom">
+                    <img src="../customerservice/images/singlebed.jpg" class="card-img-top" alt="Single Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">Single Bedroom</h5>
                         <p class="card-text">Simple & cozy</p>
@@ -219,7 +220,7 @@ $connection->close();
             <!-- Queen Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/queenbed.jpg" class="card-img-top" alt="Queen Bedroom">
+                    <img src="../customerservice/images/queenbed.jpg" class="card-img-top" alt="Queen Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">Queen Bedroom</h5>
                         <p class="card-text">Fit for a queen</p>
@@ -231,7 +232,7 @@ $connection->close();
             <!-- Double Bedroom Card -->
             <div class="col-md-4 mb-4">
                 <div class="card room-card">
-                    <img src="../images/singlebed.jpg" class="card-img-top" alt="Double Bedroom">
+                    <img src="../customerservice/images/doublebed.jpg" class="card-img-top" alt="Double Bedroom">
                     <div class="card-body">
                         <h5 class="card-title">Double Bedroom</h5>
                         <p class="card-text">Double the comfort</p>
