@@ -15,7 +15,6 @@ function connectDatabase()
     return $connection;
 }
 
-
 // Create the database connection
 $connection = connectDatabase();
 
@@ -54,12 +53,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $insertquery->bind_param("ssss", $name, $email, $number, $password);
 
         if ($insertquery->execute()) {
-            // Redirect to the main page after successful registration
-            header("Location: ../reception/mainpage.php");
-            exit();
+            // Fetch the last inserted customerId (auto-incremented)
+            $customerId = $connection->insert_id;
+
+            // Insert into user_login table with the name, email, password, and customerId
+            $insertLoginQuery = $connection->prepare("INSERT INTO user_login (customerId, name, password) VALUES (?, ?, ?)");
+            $insertLoginQuery->bind_param("iss", $customerId, $name, $password);
+
+            if ($insertLoginQuery->execute()) {
+                // Redirect to the main page after successful registration
+                header("Location: ../reception/mainpage.php");
+                exit();
+            } else {
+                echo "Error inserting into user_login: " . $insertLoginQuery->error;
+            }
         } else {
-            header("Location: user_register.php");
-            exit();
+            echo "Error inserting into user_registration: " . $insertquery->error;
         }
     } else {
         // If there are validation errors, display them
@@ -70,7 +79,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo '</ul>';
     }
 }
+
 ?>
+
 <!doctype html>
 <html lang="en">
 
@@ -83,37 +94,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 
 <body class="p-3 m-0 border-0 bd-example m-0 border-0">
-
-
-
-
     <form class="row g-3 needs-validation" novalidate="" method="post" enctype="multipart/form-data" autocomplete="on">
         <div class="mb-3">
             <label for="exampleFormControlInput1" class="form-label">Full Name</label>
-            <input type="name" name="name" class="form-control" id="exampleFormControlInput1" placeholder="Ram Shrestha">
+            <input type="name" name="name" class="form-control" id="exampleFormControlInput1" placeholder="Ram Shrestha" required>
         </div>
 
         <div class="mb-3">
             <label for="exampleFormControlInput1" class="form-label">Phone Number</label>
-            <input type="number" name="number" class="form-control" id="exampleFormControlInput1" placeholder="0987654321">
+            <input type="number" name="number" class="form-control" id="exampleFormControlInput1" placeholder="0987654321" required>
         </div>
 
         <div class="mb-3">
             <label for="exampleFormControlInput1" class="form-label">Email address</label>
-            <input type="email" name="email" class="form-control" id="exampleFormControlInput1" placeholder="name@example.com">
+            <input type="email" name="email" class="form-control" id="exampleFormControlInput1" placeholder="name@example.com" required>
         </div>
+
         <div class="mb-3">
             <label for="exampleFormControlInput1" class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" id="exampleFormControlInput1" placeholder="">
+            <input type="password" name="password" class="form-control" id="exampleFormControlInput1" placeholder="" required>
         </div>
-        <input type="Submit" name="submit" value="register" class="btn btn-primary">Submit</button>
+        <input type="Submit" name="submit" value="Register" class="btn btn-primary">
         <p>Or</p>
-        <p><a class="link-opacity-100" href="login.php">Login</a></p>
-        <p><a class="link-opacity-100" href="">Admin</a></p>
+        <p><a class="link-opacity-100" href="../userlogin/login.php">Login</a></p>
+        <p><a class="link-opacity-100" href="../userlogin/login.php">Admin</a></p>
     </form>
-
-
-
 </body>
 
 </html>

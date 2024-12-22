@@ -254,7 +254,7 @@ $connection->close();
                 <div class="modal-body">
                     <form action="room.php" method="post" enctype="multipart/form-data">
                         <!-- Username -->
-                        <input type="text" name="username" class="form-control" placeholder="Username" required><br>
+                        <input type="text" name="username" class="form-control" placeholder="CustomerId" required><br>
 
                         <!-- Password -->
                         <input type="password" name="password" class="form-control" placeholder="Password" required><br>

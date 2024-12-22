@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Validate user login credentials
-    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
+    $sql = "SELECT customerId FROM user_login WHERE customerId = ? AND password = ?";
     if (!$stmt = $connection->prepare($sql)) {
         die("Query preparation failed: " . $connection->error);
     }
@@ -32,14 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $customerId = $row['customerId']; // Fetch the correct customerId
+
         // Insert laundry request data
-        $sql_insert = "INSERT INTO laundry (user_id, laundry_type, num_cloth, event_date, additional_request)
-                       VALUES (?, ?, ?, ?, ?)";
+        $sql_insert = "INSERT INTO laundry (user_id, laundry_type, num_cloth, event_date, additional_request, customerId)
+                       VALUES (?, ?, ?, ?, ?, ?)";
         if (!$stmt_insert = $connection->prepare($sql_insert)) {
             die("Insert query preparation failed: " . $connection->error);
         }
 
-        $stmt_insert->bind_param("isiss", $user_id, $laundry_type, $num_cloth, $event_date, $additional_request);
+        $stmt_insert->bind_param("isisss", $user_id, $laundry_type, $num_cloth, $event_date, $additional_request, $customerId);
 
         if ($stmt_insert->execute()) {
             // Redirect to main page on success
@@ -59,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $connection->close();
 ?>
+
 
 <!-- HTML Form -->
 <!DOCTYPE html>
@@ -147,7 +151,7 @@ $connection->close();
                 </div>
 
                 <div class="form-group">
-                    <label for="user_id">User ID:</label>
+                    <label for="user_id">CustomerId :</label>
                     <input type="text" class="form-control" name="user_id" id="user_id" required />
                 </div>
 

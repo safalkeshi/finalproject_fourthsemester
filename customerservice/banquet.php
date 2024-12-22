@@ -1,4 +1,5 @@
 <?php
+// Include database connection
 include "../includes/dbconnect.php";
 $connection = connectDatabase();
 
@@ -7,51 +8,69 @@ if (!$connection) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $event_type = trim($_POST['event_type']);
-    $num_guests = trim($_POST['num_guests']);
-    $event_date = trim($_POST['event_date']);
-    $additional_request = trim($_POST['additional_request']);
-    $user_id = trim($_POST['user_id']);
-    $user_password = trim($_POST['password']);
+    // Retrieve and sanitize form data
+    $event_type = isset($_POST['event_type']) ? htmlspecialchars(trim($_POST['event_type'])) : '';
+    $num_guests = isset($_POST['num_guests']) ? htmlspecialchars(trim($_POST['num_guests'])) : '';
+    $event_date = isset($_POST['event_date']) ? htmlspecialchars(trim($_POST['event_date'])) : '';
+    $additional_request = isset($_POST['additional_request']) ? htmlspecialchars(trim($_POST['additional_request'])) : '';
+    $user_id = isset($_POST['user_id']) ? htmlspecialchars(trim($_POST['user_id'])) : '';
+    $user_password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
 
-    $stmt_insert = null;
+    // Check for missing values
+    if (empty($event_type) || empty($num_guests) || empty($event_date) || empty($user_id) || empty($user_password)) {
+        die("All fields are required.");
+    }
 
-    // Validate the user login credentials
-    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
-    if (!$stmt = $connection->prepare($sql)) {
+    // Validate user login credentials
+    $sql = "SELECT customerId FROM user_login WHERE customerId = ? AND password = ?";
+    $stmt = $connection->prepare($sql);
+
+    if (!$stmt) {
         die("Query preparation failed: " . $connection->error);
     }
 
-    $stmt->bind_param("is", $user_id, $user_password);
+    $stmt->bind_param("is", $user_id, $user_password); // Assuming user_id is an integer
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        // Insert banquet data
+        $row = $result->fetch_assoc();
+        $customerId = $row['customerId']; // Fetch the correct customerId
+
+        // Insert banquet data if user is valid
         $sql_insert = "INSERT INTO banquet (user_id, event_type, num_guests, event_date, additional_request)
-                         VALUES (?, ?, ?, ?, ?)";
-        if (!$stmt_insert = $connection->prepare($sql_insert)) {
+                       VALUES (?, ?, ?, ?, ?)";
+
+        $stmt_insert = $connection->prepare($sql_insert);
+
+        if (!$stmt_insert) {
             die("Insert query preparation failed: " . $connection->error);
         }
 
-        $stmt_insert->bind_param("isiss", $user_id, $event_type, $num_guests, $event_date, $additional_request);
+        $stmt_insert->bind_param("isiss", $customerId, $event_type, $num_guests, $event_date, $additional_request);
+
         if ($stmt_insert->execute()) {
-            header("location:../reception/mainpage.php");
+            // Redirect to main page on success
+            header("Location: ../reception/mainpage.php");
+            exit();
         } else {
             echo "Error submitting banquet request: " . $stmt_insert->error;
         }
+
+        $stmt_insert->close();
     } else {
         echo "Invalid credentials, please try again.";
     }
 
     $stmt->close();
-    if ($stmt_insert) {
-        $stmt_insert->close();
-    }
 }
 
 $connection->close();
 ?>
+
+
+
+
 <center>
     <div id="banquetsection" class="container mt-5">
         <label for="">Our hotel offers a variety of banquet options for your events:</label>
@@ -88,7 +107,7 @@ $connection->close();
 
             <!-- User ID and Password -->
             <div class="form-group">
-                <label for="user_id">User ID:</label>
+                <label for="user_id">CustomerId</label>
                 <input type="text" class="form-control" name="user_id" id="user_id" required />
             </div>
 

@@ -20,25 +20,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die("All fields are required.");
     }
 
-    // Validate the user login credentials
+    // Validate the user login credentials with plain text password
     $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
     if (!$stmt = $connection->prepare($sql)) {
         die("Query preparation failed: " . $connection->error);
     }
 
-    $stmt->bind_param("is", $user_id, $user_password);
+    $stmt->bind_param("is", $user_id, $user_password); // 'is' means integer for user_id and string for password
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
+        // Fetch customerId
+        $row = $result->fetch_assoc();
+        $customerId = $row['customerId'];  // Get the correct customerId
+
         // Insert kitchen request data
-        $sql_insert = "INSERT INTO kitchen (user_id, food_type, num_guests, event_date, additional_request)
-                       VALUES (?, ?, ?, ?, ?)";
+        $sql_insert = "INSERT INTO kitchen (user_id, food_type, num_guests, event_date, additional_request, customerId)
+                       VALUES (?, ?, ?, ?, ?, ?)";
         if (!$stmt_insert = $connection->prepare($sql_insert)) {
             die("Insert query preparation failed: " . $connection->error);
         }
 
-        $stmt_insert->bind_param("isiss", $user_id, $meal_type, $num_guests, $event_date, $additional_request);
+        $stmt_insert->bind_param("isisss", $user_id, $meal_type, $num_guests, $event_date, $additional_request, $customerId);
 
         if ($stmt_insert->execute()) {
             header("location:../reception/mainpage.php");
@@ -98,7 +102,7 @@ $connection->close();
             </div>
 
             <div class="form-group">
-                <label for="user_id">User ID:</label>
+                <label for="user_id">Customer ID:</label>
                 <input type="text" class="form-control" name="user_id" id="user_id" required />
             </div>
 
