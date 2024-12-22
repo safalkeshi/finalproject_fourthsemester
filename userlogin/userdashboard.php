@@ -1,3 +1,16 @@
+<?php
+session_start();
+
+// Ensure only logged-in users with the role 'user' can access this page
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'user') {
+    header("Location: login.php");
+    exit;
+}
+
+// Get the username from the session
+$username = $_SESSION['username'];
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,6 +24,7 @@
 </head>
 
 <body>
+
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Dashboard</a>
@@ -49,6 +63,8 @@
             </div>
         </div>
     </nav>
+    <h1>Hello, <?php echo htmlspecialchars($username); ?>!</h1>
+    <a href="logout.php">Logout</a>
 </body>
 
 </html>
