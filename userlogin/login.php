@@ -1,3 +1,40 @@
+<?php
+session_start();
+include "../includes/dbconnect.php";
+$connection = connectDatabase();
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = htmlspecialchars(trim($_POST['username']));
+    $password = htmlspecialchars(trim($_POST['password']));
+
+    if (empty($username) || empty($password)) {
+        die("Username and password are required.");
+    }
+
+    $sql = "SELECT customerId, role FROM user_login WHERE username = ? AND password = ?";
+    $stmt = $connection->prepare($sql);
+    $stmt->bind_param("ss", $username, $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $_SESSION['username'] = $username;
+        $_SESSION['customerId'] = $row['customerId'];
+        $_SESSION['role'] = $row['role'];
+
+        if ($row['role'] === 'user') {
+            header("Location: userdashboard.php");
+        } else {
+            header("Location: admin_dashboard.php");
+        }
+        exit();
+    } else {
+        echo "Invalid login credentials.";
+    }
+}
+?>
+
 <html lang="en">
 
 <head>
@@ -55,4 +92,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
-</html> 
+</html>

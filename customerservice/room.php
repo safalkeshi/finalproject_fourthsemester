@@ -3,66 +3,49 @@
 include "../includes/dbconnect.php";
 $connection = connectDatabase();
 
-
 if (!$connection) {
     die("Database connection failed: " . mysqli_connect_error());
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Retrieve and sanitize form data
-    $roomType = isset($_POST['roomType']) ? htmlspecialchars(trim($_POST['roomType'])) : '';
-    $guests = isset($_POST['guests']) ? htmlspecialchars(trim($_POST['guests'])) : '';
-    $eventDate = isset($_POST['eventDate']) ? htmlspecialchars(trim($_POST['eventDate'])) : '';
-    $request = isset($_POST['request']) ? htmlspecialchars(trim($_POST['request'])) : '';
-    $username = isset($_POST['username']) ? htmlspecialchars(trim($_POST['username'])) : '';
-    $password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
+    // Sanitize input
+    $customerId = htmlspecialchars(trim($_POST['customerId']));
+    $password = htmlspecialchars(trim($_POST['password']));
+    $roomType = htmlspecialchars(trim($_POST['roomType']));
+    $guests = htmlspecialchars(trim($_POST['guests']));
+    $eventDate = htmlspecialchars(trim($_POST['eventDate']));
+    $request = htmlspecialchars(trim($_POST['request']));
 
-    // Validate required fields
-    if (empty($roomType) || empty($guests) || empty($eventDate) || empty($username) || empty($password)) {
-        die("All fields are required.");
+    if (empty($customerId) || empty($password)) {
+        die("CustomerId and password are required.");
     }
 
-    // Validate user login credentials
-    $sql = "SELECT customerId, password FROM user_login WHERE customerId = ? AND password = ?";
-    if (!$stmt = $connection->prepare($sql)) {
-        die("Query preparation failed: " . $connection->error);
-    }
-
-    $stmt->bind_param("is", $username, $password);
+    // Validate login
+    $sql = "SELECT customerId FROM user_login WHERE customerId = ? AND password = ?";
+    $stmt = $connection->prepare($sql);
+    $stmt->bind_param("ss", $customerId, $password);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        // Fetch user_id from the result
         $row = $result->fetch_assoc();
-        $user_id = $row['customerId'];  // Storing the user_id
+        $user_id = $row['customerId'];
 
-        // Insert room booking data
+        // Insert into room table
         $sql_insert = "INSERT INTO room (user_id, room_type, num_guest, event_date, additional_request)
                        VALUES (?, ?, ?, ?, ?)";
-        if (!$stmt_insert = $connection->prepare($sql_insert)) {
-            die("Insert query preparation failed: " . $connection->error);
-        }
-
+        $stmt_insert = $connection->prepare($sql_insert);
         $stmt_insert->bind_param("isiss", $user_id, $roomType, $guests, $eventDate, $request);
-
         if ($stmt_insert->execute()) {
-            // Redirect to main page on success
             header("Location: ../reception/mainpage.php");
-            exit();
+            exit;
         } else {
-            echo "Error submitting room booking request: " . $stmt_insert->error;
+            echo "Error: " . $stmt_insert->error;
         }
-
-        $stmt_insert->close();
     } else {
-        echo "Invalid credentials, please try again.";
+        echo "Invalid login credentials.";
     }
-
-    $stmt->close();
 }
-
-$connection->close();
 ?>
 
 <!DOCTYPE html>
@@ -253,8 +236,8 @@ $connection->close();
                 </div>
                 <div class="modal-body">
                     <form action="room.php" method="post" enctype="multipart/form-data">
-                        <!-- Username -->
-                        <input type="text" name="username" class="form-control" placeholder="CustomerId" required><br>
+                        <!-- Customer ID -->
+                        <input type="text" name="customerId" class="form-control" placeholder="CustomerId" required><br>
 
                         <!-- Password -->
                         <input type="password" name="password" class="form-control" placeholder="Password" required><br>
@@ -278,9 +261,8 @@ $connection->close();
             </div>
         </div>
     </div>
-    <!-- Availability Check Button -->
-    <button type="button" id="checkAvailabilityBtn" class="btn btn-info"><a href="checkavailability.php">Check Availability</a></button>
-    <p id="availabilityMessage" class="mt-2"></p>
+
+
 
     <!-- Add Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

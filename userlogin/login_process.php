@@ -18,7 +18,7 @@ if (empty($role) || empty($username) || empty($password)) {
 
 if ($role === "user") {
     // Check user credentials
-    $sql = "SELECT * FROM user_registration WHERE name = ? AND password = ?";
+    $sql = "SELECT * FROM user_login WHERE name = ? AND password = ?";
     $stmt = $connection->prepare($sql);
 
     if (!$stmt) {
@@ -33,8 +33,8 @@ if ($role === "user") {
         // Login successful
         $_SESSION['username'] = $username;
         $_SESSION['role'] = $role;
-        header("Location: userdashboard.php");
-        exit;
+        header("Location: ../userlogin/userdashboard.php");
+        echo "error";
     } else {
         echo "Invalid username or password for User!";
     }

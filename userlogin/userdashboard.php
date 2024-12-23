@@ -1,14 +1,37 @@
 <?php
 session_start();
 
-// Ensure only logged-in users with the role 'user' can access this page
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'user') {
+// Ensure the user is logged in
+if (!isset($_SESSION['customerId'])) {
     header("Location: login.php");
-    exit;
+    exit();
 }
 
-// Get the username from the session
-$username = $_SESSION['username'];
+include "../includes/dbconnect.php";
+$connection = connectDatabase();
+
+$customerId = $_SESSION['customerId'];
+
+// Fetch room bookings
+$roomQuery = "SELECT * FROM room WHERE customerId = ?";
+$roomStmt = $connection->prepare($roomQuery);
+$roomStmt->bind_param("i", $customerId);
+$roomStmt->execute();
+$roomResults = $roomStmt->get_result();
+
+// Fetch laundry orders
+$laundryQuery = "SELECT * FROM laundry WHERE customerId = ?";
+$laundryStmt = $connection->prepare($laundryQuery);
+$laundryStmt->bind_param("i", $customerId);
+$laundryStmt->execute();
+$laundryResults = $laundryStmt->get_result();
+
+// Fetch kitchen orders
+$kitchenQuery = "SELECT * FROM kitchen WHERE customerId = ?";
+$kitchenStmt = $connection->prepare($kitchenQuery);
+$kitchenStmt->bind_param("i", $customerId);
+$kitchenStmt->execute();
+$kitchenResults = $kitchenStmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -17,54 +40,88 @@ $username = $_SESSION['username'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 
 <body>
+    <div class="container mt-4">
+        <h1>Welcome, <?php echo htmlspecialchars($_SESSION['name']); ?>!</h1>
 
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">Dashboard</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Link</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Dropdown
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Action</a></li>
-                            <li><a class="dropdown-item" href="#">Another action</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="#">Something else here</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link disabled" aria-disabled="true">Disabled</a>
-                    </li>
-                </ul>
-                <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
-            </div>
-        </div>
-    </nav>
-    <h1>Hello, <?php echo htmlspecialchars($username); ?>!</h1>
-    <a href="logout.php">Logout</a>
+        <h2>Your Room Bookings</h2>
+        <?php if ($roomResults->num_rows > 0): ?>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Room ID</th>
+                        <th>Booking Date</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $roomResults->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $row['room_id']; ?></td>
+                            <td><?php echo $row['booking_date']; ?></td>
+                            <td><?php echo $row['price']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>No room bookings found.</p>
+        <?php endif; ?>
+
+        <h2>Your Laundry Orders</h2>
+        <?php if ($laundryResults->num_rows > 0): ?>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Items</th>
+                        <th>Total Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $laundryResults->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $row['id']; ?></td>
+                            <td><?php echo $row['items']; ?></td>
+                            <td><?php echo $row['total_cost']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>No laundry orders found.</p>
+        <?php endif; ?>
+
+        <h2>Your Kitchen Orders</h2>
+        <?php if ($kitchenResults->num_rows > 0): ?>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Food Items</th>
+                        <th>Total Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $kitchenResults->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $row['order_id']; ?></td>
+                            <td><?php echo $row['food_items']; ?></td>
+                            <td><?php echo $row['total_cost']; ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>No kitchen orders found.</p>
+        <?php endif; ?>
+
+        <a href="logout.php" class="btn btn-danger">Logout</a>
+    </div>
 </body>
 
 </html>

@@ -1,21 +1,6 @@
 <?php
-
-$host = "localhost";
-$username = "root";
-$password = "";
-$db = "finalproj";
-
-function connectDatabase()
-{
-    global $host, $username, $password, $db;
-    $connection = new \mysqli($host, $username, $password, $db);
-    if ($connection->connect_error) {
-        die("Connection failed: " . $connection->connect_error);
-    }
-    return $connection;
-}
-
-// Create the database connection
+session_start();
+include "../includes/dbconnect.php";
 $connection = connectDatabase();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -79,7 +64,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo '</ul>';
     }
 }
-
 ?>
 
 <!doctype html>
@@ -89,36 +73,107 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://getbootstrap.com/docs/5.3/assets/css/docs.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f7fa;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            color: #333;
+        }
+
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            border-radius: 25px;
+            padding: 12px 25px;
+        }
+
+        .btn-custom:hover {
+            background-color: #0056b3;
+        }
+
+        .link-custom {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .link-custom:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: red;
+            list-style: none;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
-<body class="p-3 m-0 border-0 bd-example m-0 border-0">
-    <form class="row g-3 needs-validation" novalidate="" method="post" enctype="multipart/form-data" autocomplete="on">
-        <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label">Full Name</label>
-            <input type="name" name="name" class="form-control" id="exampleFormControlInput1" placeholder="Ram Shrestha" required>
-        </div>
+<body class="p-3">
 
-        <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label">Phone Number</label>
-            <input type="number" name="number" class="form-control" id="exampleFormControlInput1" placeholder="0987654321" required>
-        </div>
+    <div class="form-container">
+        <h2 class="form-title">User Registration</h2>
 
-        <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label">Email address</label>
-            <input type="email" name="email" class="form-control" id="exampleFormControlInput1" placeholder="name@example.com" required>
-        </div>
+        <?php if (!empty($errors)) { ?>
+            <div class="alert alert-danger">
+                <ul class="error-msg">
+                    <?php foreach ($errors as $error) {
+                        echo "<li>$error</li>";
+                    } ?>
+                </ul>
+            </div>
+        <?php } ?>
 
-        <div class="mb-3">
-            <label for="exampleFormControlInput1" class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" id="exampleFormControlInput1" placeholder="" required>
+        <form class="needs-validation" method="post" novalidate="" autocomplete="on">
+            <!-- Full Name -->
+            <div class="mb-3">
+                <label for="name" class="form-label">Full Name</label>
+                <input type="text" name="name" class="form-control" id="name" placeholder="Ram Shrestha" required>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="mb-3">
+                <label for="number" class="form-label">Phone Number</label>
+                <input type="text" name="number" class="form-control" id="number" placeholder="0987654321" required>
+            </div>
+
+            <!-- Email Address -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-control" id="email" placeholder="name@example.com" required>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" id="password" placeholder="Your password" required>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-custom">Register</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-3">
+            <p>Already have an account? <a href="../userlogin/login.php" class="link-custom">Login</a></p>
+            <p>Admin? <a href="../userlogin/login.php" class="link-custom">Login as Admin</a></p>
         </div>
-        <input type="Submit" name="submit" value="Register" class="btn btn-primary">
-        <p>Or</p>
-        <p><a class="link-opacity-100" href="../userlogin/login.php">Login</a></p>
-        <p><a class="link-opacity-100" href="../userlogin/login.php">Admin</a></p>
-    </form>
+    </div>
+
 </body>
 
 </html>
